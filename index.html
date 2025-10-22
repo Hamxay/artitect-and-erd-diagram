@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture Diagrams</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+            overflow-x: auto;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        .diagram-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        /* ERD Styles with SVG Relationships */
+        .erd-canvas {
+            position: relative;
+            min-height: 2200px;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 40px;
+        }
+
+        .entity-box {
+            position: absolute;
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-width: 280px;
+            z-index: 10;
+        }
+
+        .entity-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .entity-body {
+            padding: 0;
+        }
+
+        .entity-field {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .entity-field:last-child {
+            border-bottom: none;
+        }
+
+        .field-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .field-type {
+            color: #718096;
+            font-size: 11px;
+        }
+
+        .field-constraint {
+            background: #667eea;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .fk-constraint {
+            background: #48bb78;
+        }
+
+        /* SVG for relationship lines */
+        .relationships-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .relationship-line {
+            stroke: #667eea;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .relationship-label {
+            font-size: 11px;
+            font-weight: 600;
+            fill: #4a5568;
+            background: white;
+            padding: 2px 4px;
+        }
+
+        /* Legend */
+        .legend {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .legend-symbol {
+            width: 40px;
+            height: 3px;
+            background: #667eea;
+        }
+
+        .legend-symbol.one-to-many::after {
+            content: '→';
+            color: #667eea;
+            font-weight: bold;
+            margin-left: 2px;
+        }
+
+        /* System Architecture Styles */
+        .architecture-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .arch-layer {
+            position: relative;
+        }
+
+        .layer-container {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 30px;
+        }
+
+        .layer-header {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .arch-components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .arch-box {
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            font-weight: 600;
+            color: #2d3748;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arch-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+
+        .connection-arrow {
+            text-align: center;
+            font-size: 30px;
+            color: #667eea;
+            margin: -20px 0;
+        }
+
+        /* Sequence Flow Styles */
+        .sequence-container {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .sequence-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .sequence-actors {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .actor {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 15px 25px;
+            font-weight: 600;
+            color: #2d3748;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .sequence-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .step {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 15px;
+        }
+
+        .step-content {
+            display: inline;
+            color: #2d3748;
+        }
+
+        .step-from {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .step-to {
+            color: #764ba2;
+            font-weight: 700;
+        }
+
+        .step-action {
+            color: #4a5568;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                width: 100%;
+            }
+            
+            .arch-components {
+                grid-template-columns: 1fr;
+            }
+
+            .erd-canvas {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Invoice & Tax Automation System</h1>
+            <p>Comprehensive Architecture, ERD & Sequence Flow Diagrams</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('erd')">🗄️ Entity Relationship Diagram</button>
+            <button class="tab" onclick="showTab('architecture')">🏗️ System Architecture</button>
+            <button class="tab" onclick="showTab('sequences')">🔄 Sequence Flows</button>
+        </div>
+
+        <!-- ERD with Relationships -->
+        <div id="erd" class="content active">
+            <h2 class="diagram-title">Entity Relationship Diagram (ERD) - With Relationships</h2>
+
+            <div class="legend">
+                <div class="legend-title">📖 Relationship Legend</div>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-symbol"></div>
+                        <span><strong>One-to-Many:</strong> Organization → Clients (1 org has many clients)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol"></div>
+                        <span><strong>Many-to-Many:</strong> Users ↔ Organizations (via junction table)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span style="color: #667eea;">●</span>
+                        <span><strong>PK:</strong> Primary Key</span>
+                    </div>
+                    <div class="legend-item">
+                        <span style="color: #48bb78;">●</span>
+                        <span><strong>FK:</strong> Foreign Key</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="erd-canvas">
+                <svg class="relationships-svg">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#667eea" />
+                        </marker>
+                    </defs>
+                    
+                    <!-- Organizations to Clients -->
+                    <line class="relationship-line" x1="220" y1="180" x2="220" y2="500" />
+                    <text x="230" y="340" class="relationship-label">1:N manages</text>
+                    
+                    <!-- Organizations to Invoices -->
+                    <line class="relationship-line" x1="400" y1="180" x2="650" y2="500" />
+                    <text x="500" y="330" class="relationship-label">1:N creates</text>
+                    
+                    <!-- Organizations to Payments -->
+                    <line class="relationship-line" x1="450" y1="180" x2="1100" y2="880" />
+                    <text x="750" y="500" class="relationship-label">1:N receives</text>
+                    
+                    <!-- Organizations to Tax Profiles -->
+                    <line class="relationship-line" x1="220" y1="180" x2="220" y2="1180" />
+                    <text x="230" y="680" class="relationship-label">1:1 configures</text>
+                    
+                    <!-- Organizations to Tax Calculations -->
+                    <line class="relationship-line" x1="400" y1="180" x2="650" y2="1470" />
+                    <text x="500" y="820" class="relationship-label">1:N computes</text>
+                    
+                    <!-- Organizations to Audit Logs -->
+                    <line class="relationship-line" x1="450" y1="180" x2="1100" y2="1180" />
+                    <text x="750" y="680" class="relationship-label">1:N tracks</text>
+                    
+                    <!-- Organizations to AI Tasks -->
+                    <line class="relationship-line" x1="350" y1="180" x2="350" y2="1760" />
+                    <text x="360" y="970" class="relationship-label">1:N requests</text>
+                    
+                    <!-- Users to User_Organizations -->
+                    <line class="relationship-line" x1="700" y1="180" x2="700" y2="280" />
+                    <text x="710" y="230" class="relationship-label">1:N belongs</text>
+                    
+                    <!-- Organizations to User_Organizations -->
+                    <line class="relationship-line" x1="380" y1="120" x2="580" y2="285" />
+                    <text x="450" y="190" class="relationship-label">1:N has</text>
+                    
+                    <!-- Clients to Invoices -->
+                    <line class="relationship-line" x1="380" y1="650" x2="600" y2="650" />
+                    <text x="450" y="640" class="relationship-label">1:N receives</text>
+                    
+                    <!-- Invoices to Invoice Items -->
+                    <line class="relationship-line" x1="830" y1="650" x2="1000" y2="650" />
+                    <text x="870" y="640" class="relationship-label">1:N contains</text>
+                    
+                    <!-- Invoices to Payments -->
+                    <line class="relationship-line" x1="800" y1="800" x2="1050" y2="880" />
+                    <text x="880" y="830" class="relationship-label">1:N paid by</text>
+                    
+                    <!-- Tax Profiles to Tax Rates -->
+                    <line class="relationship-line" x1="380" y1="1350" x2="600" y2="1350" />
+                    <text x="450" y="1340" class="relationship-label">1:N uses</text>
+                    
+                    <!-- Users to Audit Logs -->
+                    <line class="relationship-line" x1="750" y1="180" x2="1000" y2="1180" />
+                    <text x="850" y="680" class="relationship-label">1:N performs</text>
+                </svg>
+
+                <!-- Organizations -->
+                <div class="entity-box" style="left: 50px; top: 30px;">
+                    <div class="entity-header">🏢 ORGANIZATIONS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">name</span>
+                            <span class="field-type">TEXT NOT NULL</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">country_code</span>
+                            <span class="field-type">CHAR(2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">base_currency</span>
+                            <span class="field-type">CHAR(3)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">created_at</span>
+                            <span class="field-type">TIMESTAMPTZ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users -->
+                <div class="entity-box" style="left: 550px; top: 30px;">
+                    <div class="entity-header">👤 USERS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">email</span>
+                            <span>
+                                <span class="field-type">CITEXT</span>
+                                <span class="field-constraint">UNIQUE</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">password_hash</span>
+                            <span class="field-type">TEXT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">full_name</span>
+                            <span class="field-type">TEXT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">is_active</span>
+                            <span class="field-type">BOOLEAN</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Organizations Junction -->
+                <div class="entity-box" style="left: 580px; top: 270px; min-width: 260px;">
+                    <div class="entity-header">🔗 USER_ORGANIZATIONS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">user_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">org_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">role</span>
+                            <span class="field-type">TEXT (owner/admin/member)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clients -->
+                <div class="entity-box" style="left: 50px; top: 500px;">
+                    <div class="entity-header">👥 CLIENTS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">org_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">name</span>
+                            <span class="field-type">TEXT NOT NULL</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">email</span>
+                            <span class="field-type">TEXT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">phone</span>
+                            <span class="field-type">TEXT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">country_code</span>
+                            <span class="field-type">CHAR(2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">currency</span>
+                            <span class="field-type">CHAR(3)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoices -->
+                <div class="entity-box" style="left: 600px; top: 500px;">
+                    <div class="entity-header">📄 INVOICES</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">org_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">client_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">status</span>
+                            <span class="field-type">TEXT (DRAFT/ISSUED/PAID)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">invoice_number</span>
+                            <span>
+                                <span class="field-type">TEXT</span>
+                                <span class="field-constraint">UNIQUE</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">issue_date</span>
+                            <span class="field-type">DATE</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">total</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">amount_paid</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">locked</span>
+                            <span class="field-type">BOOLEAN</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Items -->
+                <div class="entity-box" style="left: 1000px; top: 500px;">
+                    <div class="entity-header">📋 INVOICE_ITEMS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">invoice_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">position</span>
+                            <span class="field-type">INT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">description</span>
+                            <span class="field-type">TEXT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">quantity</span>
+                            <span class="field-type">NUMERIC(18,4)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">unit_price</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">line_total</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payments -->
+                <div class="entity-box" style="left: 1050px; top: 880px;">
+                    <div class="entity-header">💳 PAYMENTS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">org_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">invoice_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">provider</span>
+                            <span class="field-type">TEXT (stripe/paypal/jazzcash)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">provider_ref</span>
+                            <span>
+                                <span class="field-type">TEXT</span>
+                                <span class="field-constraint">UNIQUE</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">amount</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">status</span>
+                            <span class="field-type">TEXT (PENDING/SUCCEEDED)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Profiles -->
+                <div class="entity-box" style="left: 50px; top: 1180px;">
+                    <div class="entity-header">📊 TAX_PROFILES</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">org_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">country_code</span>
+                            <span class="field-type">CHAR(2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">tax_year</span>
+                            <span class="field-type">INT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">residency_status</span>
+                            <span class="field-type">TEXT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">exemptions</span>
+                            <span class="field-type">JSONB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Rates -->
+                <div class="entity-box" style="left: 600px; top: 1180px;">
+                    <div class="entity-header">💰 TAX_RATES</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">BIGSERIAL</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">country_code</span>
+                            <span class="field-type">CHAR(2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">tax_year</span>
+                            <span class="field-type">INT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">slab_min</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">slab_max</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">rate_percent</span>
+                            <span class="field-type">NUMERIC(5,2)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Logs -->
+                <div class="entity-box" style="left: 1000px; top: 1180px;">
+                    <div class="entity-header">📝 AUDIT_LOGS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">BIGSERIAL</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">org_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">user_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">action</span>
+                            <span class="field-type">TEXT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">entity</span>
+                            <span class="field-type">TEXT</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">entity_id</span>
+                            <span class="field-type">UUID</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Calculations -->
+                <div class="entity-box" style="left: 600px; top: 1470px;">
+                    <div class="entity-header">🧮 TAX_CALCULATIONS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">org_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">period_month</span>
+                            <span class="field-type">DATE</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">gross_income_base</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">taxable_income_base</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">estimated_tax_base</span>
+                            <span class="field-type">NUMERIC(18,2)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Tasks -->
+                <div class="entity-box" style="left: 50px; top: 1760px;">
+                    <div class="entity-header">🤖 AI_TASKS</div>
+                    <div class="entity-body">
+                        <div class="entity-field">
+                            <span class="field-name">id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint">PK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">org_id</span>
+                            <span>
+                                <span class="field-type">UUID</span>
+                                <span class="field-constraint fk-constraint">FK</span>
+                            </span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">task_type</span>
+                            <span class="field-type">TEXT (categorize/invoice_text)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">status</span>
+                            <span class="field-type">TEXT (QUEUED/RUNNING/SUCCEEDED)</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">input</span>
+                            <span class="field-type">JSONB</span>
+                        </div>
+                        <div class="entity-field">
+                            <span class="field-name">output</span>
+                            <span class="field-type">JSONB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Architecture -->
+        <div id="architecture" class="content">
+            <h2 class="diagram-title">System Architecture Diagram</h2>
+            
+            <div class="architecture-diagram">
+                <!-- Frontend Layer -->
+                <div class="arch-layer">
+                    <div class="layer-container">
+                        <div class="layer-header">🖥️ Frontend Layer - React/Next.js</div>
+                        <div class="arch-components">
+                            <div class="arch-box">Invoice Management</div>
+                            <div class="arch-box">Client Management</div>
+                            <div class="arch-box">Payment Tracking</div>
+                            <div class="arch-box">Tax Dashboard</div>
+                            <div class="arch-box">Reports & Analytics</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connection-arrow">⬇️</div>
+
+                <!-- API Layer -->
+                <div class="arch-layer">
+                    <div class="layer-container">
+                        <div class="layer-header">⚡ Backend API - FastAPI</div>
+                        <div class="arch-components">
+                            <div class="arch-box">Auth & RBAC</div>
+                            <div class="arch-box">Invoice Service</div>
+                            <div class="arch-box">Client Service</div>
+                            <div class="arch-box">Payment Service</div>
+                            <div class="arch-box">Tax Engine</div>
+                            <div class="arch-box">Reports Service</div>
+                            <div class="arch-box">AI Gateway</div>
+                            <div class="arch-box">Webhook Handler</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connection-arrow">⬇️</div>
+
+                <!-- Workers Layer -->
+                <div class="arch-layer">
+                    <div class="layer-container">
+                        <div class="layer-header">⚙️ Async Workers - Celery/RQ</div>
+                        <div class="arch-components">
+                            <div class="arch-box">PDF Generation</div>
+                            <div class="arch-box">Email Delivery</div>
+                            <div class="arch-box">SMS Notifications</div>
+                            <div class="arch-box">Currency Sync</div>
+                            <div class="arch-box">AI Processing</div>
+                            <div class="arch-box">Tax Calculation</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connection-arrow">⬇️</div>
+
+                <!-- Data Layer -->
+                <div class="arch-layer">
+                    <div class="layer-container">
+                        <div class="layer-header">💾 Data Layer</div>
+                        <div class="arch-components">
+                            <div class="arch-box" style="grid-column: span 2;">PostgreSQL Database<br><small>Organizations, Users, Clients, Invoices, Payments, Tax Data</small></div>
+                            <div class="arch-box">Redis Cache</div>
+                            <div class="arch-box">S3/MinIO Storage</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connection-arrow">↔️</div>
+
+                <!-- External Services -->
+                <div class="arch-layer">
+                    <div class="layer-container">
+                        <div class="layer-header">🌐 External Integrations</div>
+                        <div class="arch-components">
+                            <div class="arch-box">Stripe</div>
+                            <div class="arch-box">PayPal</div>
+                            <div class="arch-box">Payoneer</div>
+                            <div class="arch-box">JazzCash</div>
+                            <div class="arch-box">OpenAI/LLM</div>
+                            <div class="arch-box">FX Rates API</div>
+                            <div class="arch-box">Email (SES/SendGrid)</div>
+                            <div class="arch-box">SMS Gateway</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sequence Flows -->
+        <div id="sequences" class="content">
+            <h2 class="diagram-title">Sequence Flow Diagrams</h2>
+
+            <!-- Invoice Creation Flow -->
+            <div class="sequence-container">
+                <div class="sequence-title">📄 Invoice Creation & Delivery Flow</div>
+                
+                <div class="sequence-actors">
+                    <div class="actor">User</div>
+                    <div class="actor">Frontend</div>
+                    <div class="actor">API</div>
+                    <div class="actor">Worker</div>
+                    <div class="actor">S3</div>
+                    <div class="actor">Email</div>
+                </div>
+
+                <div class="sequence-steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <span class="step-content">
+                            <span class="step-from">User</span> → <span class="step-to">Frontend</span>: 
+                            <span class="step-action">Create new invoice</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <span class="step-content">
+                            <span class="step-from">Frontend</span> → <span class="step-to">API</span>: 
+                            <span class="step-action">POST /invoices (status: DRAFT)</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Database</span>: 
+                            <span class="step-action">INSERT invoice with org_id, client_id</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <span class="step-content">
+                            <span class="step-from">User</span> → <span class="step-to">Frontend</span>: 
+                            <span class="step-action">Add line items and totals</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        <span class="step-content">
+                            <span class="step-from">User</span> → <span class="step-to">Frontend</span>: 
+                            <span class="step-action">Click "Issue Invoice"</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">6</span>
+                        <span class="step-content">
+                            <span class="step-from">Frontend</span> → <span class="step-to">API</span>: 
+                            <span class="step-action">POST /invoices/{id}/issue</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">7</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Generate invoice_number, set status=ISSUED, locked=true</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">8</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Worker</span>: 
+                            <span class="step-action">Enqueue PDF generation job</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">9</span>
+                        <span class="step-content">
+                            <span class="step-from">Worker</span>: 
+                            <span class="step-action">Fetch invoice data, render PDF template</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">10</span>
+                        <span class="step-content">
+                            <span class="step-from">Worker</span> → <span class="step-to">S3</span>: 
+                            <span class="step-action">Upload generated PDF</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">11</span>
+                        <span class="step-content">
+                            <span class="step-from">Worker</span> → <span class="step-to">API</span>: 
+                            <span class="step-action">Update invoice.pdf_url with signed URL</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">12</span>
+                        <span class="step-content">
+                            <span class="step-from">User</span> → <span class="step-to">Frontend</span>: 
+                            <span class="step-action">Click "Send to Client"</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">13</span>
+                        <span class="step-content">
+                            <span class="step-from">Frontend</span> → <span class="step-to">API</span>: 
+                            <span class="step-action">POST /invoices/{id}/send</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">14</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Email</span>: 
+                            <span class="step-action">Send email to client with PDF link</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">15</span>
+                        <span class="step-content">
+                            <span class="step-from">Email</span> → <span class="step-to">Client</span>: 
+                            <span class="step-action">Invoice email delivered ✅</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Webhook Flow -->
+            <div class="sequence-container">
+                <div class="sequence-title">💳 Payment Webhook Processing Flow</div>
+                
+                <div class="sequence-actors">
+                    <div class="actor">Client</div>
+                    <div class="actor">Stripe/PayPal</div>
+                    <div class="actor">Webhook</div>
+                    <div class="actor">API</div>
+                    <div class="actor">Worker</div>
+                </div>
+
+                <div class="sequence-steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <span class="step-content">
+                            <span class="step-from">Client</span> → <span class="step-to">Stripe</span>: 
+                            <span class="step-action">Complete payment via Stripe checkout</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <span class="step-content">
+                            <span class="step-from">Stripe</span>: 
+                            <span class="step-action">Process payment successfully</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <span class="step-content">
+                            <span class="step-from">Stripe</span> → <span class="step-to">Webhook</span>: 
+                            <span class="step-action">POST payment.succeeded event with signature</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <span class="step-content">
+                            <span class="step-from">Webhook</span> → <span class="step-to">API</span>: 
+                            <span class="step-action">Forward webhook payload</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Verify webhook signature (HMAC-SHA256)</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">6</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Check idempotency (provider_ref uniqueness)</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">7</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Database</span>: 
+                            <span class="step-action">INSERT payment record</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">8</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Get FX rate if currency differs</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">9</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Database</span>: 
+                            <span class="step-action">UPDATE invoice amount_paid</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">10</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Update status to PAID or PARTIAL</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">11</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Worker</span>: 
+                            <span class="step-action">Enqueue receipt email job</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">12</span>
+                        <span class="step-content">
+                            <span class="step-from">Worker</span>: 
+                            <span class="step-action">Send receipt & update reporting</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tax Calculation Flow -->
+            <div class="sequence-container">
+                <div class="sequence-title">🧮 Monthly Tax Calculation Flow</div>
+                
+                <div class="sequence-actors">
+                    <div class="actor">Cron</div>
+                    <div class="actor">API</div>
+                    <div class="actor">Database</div>
+                    <div class="actor">FX API</div>
+                    <div class="actor">Worker</div>
+                </div>
+
+                <div class="sequence-steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <span class="step-content">
+                            <span class="step-from">Cron</span> → <span class="step-to">API</span>: 
+                            <span class="step-action">POST /tax/recalculate?period=2025-09</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Database</span>: 
+                            <span class="step-action">SELECT tax_profile for org</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Database</span>: 
+                            <span class="step-action">SELECT paid invoices in period</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Loop through each invoice</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">FX API</span>: 
+                            <span class="step-action">GET exchange rate for date</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">6</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Convert to base_currency & sum gross income</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">7</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Calculate taxable_income = gross - deductions</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">8</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Database</span>: 
+                            <span class="step-action">SELECT tax_rates for country & year</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">9</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Apply progressive tax slabs</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">10</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span>: 
+                            <span class="step-action">Apply exemptions from profile</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">11</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Database</span>: 
+                            <span class="step-action">INSERT tax_calculation with breakdown</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">12</span>
+                        <span class="step-content">
+                            <span class="step-from">API</span> → <span class="step-to">Worker</span>: 
+                            <span class="step-action">Enqueue notification if threshold exceeded</span>
+                        </span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">13</span>
+                        <span class="step-content">
+                            <span class="step-from">Worker</span> → <span class="step-to">User</span>: 
+                            <span class="step-action">Send email with tax summary</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            const contents = document.querySelectorAll('.content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
